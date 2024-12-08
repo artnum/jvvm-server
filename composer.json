@@ -1,0 +1,33 @@
+{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/artnum/kaal-db"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/artnum/pjapi-php"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/artnum/snowflake53"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/artnum/idz"
+        }
+
+    ],
+    "autoload": {
+        "psr-4": {
+            "JVVM\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "require": {
+        "artnum/kaal-db": "@dev",
+        "artnum/pjapi": "@dev",
+        "artnum/snowflake53": "@dev",
+        "artnum/idz": "@dev"
+    }
+}

@@ -1,0 +1,33 @@
+@import url('color.css');
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap');
+
+body {
+    background-color: var(--quaternary);
+    color: var(--secondary);
+    font-family: "EB Garamond", serif;
+}
+
+button {
+    background-color: var(--secondary);
+    color: var(--quaternary);
+    border: solid 2px var(--tertiary);
+    box-shadow: 0 0 0 0 var(--quaternary);
+    padding: 0.2em 1.5em;
+    font-size: 1em;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: "Josefin Sans", sans-serif;
+}
+
+button:hover {
+    border-top-color: var(--primary);
+    border-left-color: var(--primary);
+}
+
+button:active {
+    color: var(--secondary);
+    background-color: var(--quaternary);
+    border-top-color: var(--primary);
+    border-left-color: var(--primary);
+}

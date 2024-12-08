@@ -1,0 +1,18 @@
+RewriteEngine On
+
+RewriteBase /
+
+RewriteCond $0#%{REQUEST_URI} ([^#]*)#(.*)\1$
+RewriteRule ^.*$ - [E=CWD:%2] 
+
+RewriteRule ^(?:.*)/?\$api/?(.*)$ %{ENV:CWD}japi.php/$1 [L]
+RewriteRule ^(?:.*)/?\$assets/?(.*)$ %{ENV:CWD}assets.php/$1 [R,L]
+
+<IfModule mod_expires.c>
+ExpiresActive on
+ExpiresDefault "now"
+</IfModule>
+
+<IfModule mod_headers.c>
+Header set Cache-Control "no-cache, no-store, must-revalidate"
+</IfModule>

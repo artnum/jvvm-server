@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <link rel="stylesheet" href="$assets/css/themes.css">
+    <script src="$assets/js/api.js"></script>
+</head>
+<body>
+    <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Suscipit consequatur eveniet nesciunt ipsam praesentium ipsum rem debitis dolore laborum, doloribus magni, neque consectetur libero nobis obcaecati ea corporis voluptates laudantium?</p>
+    <button>Test</button>
+</body>
+
+<script>
+    const api = new API()
+    api.fetch('$api/user?firstname=like:et*')
+    .then(content => {
+        console.log(content)
+    })
+</script>
+</html>
