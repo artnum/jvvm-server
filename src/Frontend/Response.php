@@ -3,6 +3,7 @@
 namespace JVVM\Frontend;
 
 use Exception;
+use JVVM\Utils\URI;
 use UUID;
 
 class Response {
@@ -47,23 +48,27 @@ class Response {
         ]) . ',';
     }
 
-    function open() {
+    function open(URI $uri) {
         if ($this->opened) {
             return;
         }
         header('Content-Type: application/json;charset=utf-8', true, 200);
         ob_end_flush();
-        printf('[{"__set":"start","id":"%s"},', $this->id);
+        printf('[{"__set":"start","id":"%s","uri":"%s"},', $this->id, $uri);
         $this->opened = true;
     }
 
-    function emit(mixed $object) {
+    function emit(mixed $object, ?URI $uri = null) {
         if (!$this->opened) {
             error_log('Writing data on closed channel');
             return;
         }
         if (empty($object)) { return; }
-        $str = json_encode(['__set' => 'item', 'item' => $object]);
+        $content = ['__set' => 'item', 'item' => $object];
+        if (!is_null($uri)) {
+            $content['uri'] = strval($uri);
+        }
+        $str = json_encode($content);
         if (is_null($str)) { return; }
         echo $str . ',';
         $this->length++;

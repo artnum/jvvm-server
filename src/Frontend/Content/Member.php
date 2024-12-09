@@ -7,6 +7,7 @@ use Exception;
 use JVVM\Frontend\Response;
 use JVVM\Frontend\Request;
 use JVVM\Utils\ID;
+use JVVM\Utils\URI;
 
 class Member {
     protected BMember $backend;
@@ -31,9 +32,10 @@ class Member {
     }
 
     function read(Request $request, array $params, array $args = []) {
-        $this->response->open();
+        $this->response->open($request->get_uri());
         try {
-            $this->response->emit($this->backend->get($params['user_id']));
+            $object = $this->backend->get($params['user_id']);
+            $this->response->emit($object, $request->get_uri());
         } catch (Exception $e) {
             $this->response->error($e);
         }
@@ -72,10 +74,13 @@ class Member {
     }
 
     function search(Request $request) {
-        $this->response->open();
+        $this->response->open($request->get_uri());
         try {
             foreach($this->backend->search($request->get_uri()->get_query_string()) as $object) {
-                $this->response->emit($object);
+                $this->response->emit(
+                    $object,
+                    new URI(strval($request->get_uri()) . '/' . $object['id'])
+                );
             }
         } catch (Exception $e) {
             $this->response->error($e);

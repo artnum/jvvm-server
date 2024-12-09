@@ -11,14 +11,17 @@ class URI implements Iterator {
     protected int $position;
     protected int $method;
     protected string $id;
+    protected bool $real; /* a real URI is one that came from the server, if 
+                           * build in app, it's not a real one, it's a possible
+                           * one.
+                           */
 
-    function __construct(string $uri, string $delimiter = '$api') {
+    function __construct(string $uri) {
         $parts = explode('?', $uri, 2);
         if (isset($parts[1])) {
             $this->parse_query_string($parts[1]);
         }
         $parts = explode('/', $parts[0]);
-        while(array_shift($parts) !== $delimiter);
         $parts = array_map(
             fn($e) => urldecode($e),
             array_filter(
@@ -26,10 +29,44 @@ class URI implements Iterator {
                 fn($e) => !empty($e)
             )
         );
-        $this->parts = $parts;
+        $this->parts = array_values($parts);
         $this->position = 0;
-        $this->method = HTTPMethod::detect();
         $this->id = '';
+        $this->method = -1;
+        $this->real = false;
+    }
+
+    static function fromRequest(string $uri) {        
+        $parts = preg_split('/\$[a-z]+/', $uri);
+        $uri = new URI(array_pop($parts));
+        $uri->method = HTTPMethod::detect();
+        $uri->real = true;
+        return $uri;
+    }
+
+    function is_real():bool {
+        return $this->real;
+    }
+
+    function copy_from(URI $uri, ?URI $template = null) {
+        $this->method = $uri->get_method();
+        $this->real = $uri->is_real();
+        $this->qs =$uri->get_query_string();
+        if ($template != NULL) {
+            $copy = false;
+            $i = 0;
+            $original = $uri->get_uri_components();
+            $tpl = $template->get_uri_components();
+            for ($i = 0; $i < count($original); $i++) {
+                if ($tpl[$i] === '{*}') {
+                    $copy = true;
+                }
+                if ($copy) {
+                    $this->parts[$i] = $original[$i];
+                }
+            }
+            
+        }
     }
 
     function set_qs_variable(string $name, mixed $value) {
@@ -64,6 +101,10 @@ class URI implements Iterator {
         return $this->id;
     }
 
+    function get_uri_components():array {
+        return $this->parts;
+    }
+
     function get_method():int {
         return $this->method;
     }
@@ -94,5 +135,9 @@ class URI implements Iterator {
 
     function dump() {
         var_dump($this->parts);
+    }
+
+    public function __toString():string {
+        return join('/', $this->parts);
     }
 }

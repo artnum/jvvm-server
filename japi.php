@@ -7,6 +7,7 @@ use JVVM\Backend\PDO;
 use JVVM\Frontend\Response;
 use JVVM\Utils\URI;
 use JVVM\Utils\HTTPMethod;
+use JVVM\Utils\RouterMethod;
 
 ob_start();
 try {
@@ -16,34 +17,38 @@ try {
     $router = new Router();
 
     $router->set_filter('uid', [Content\Member::class, 'id_filter']);
-
+    $router->add(
+        RouterMethod::redirect(),
+        new URI('member/{*}'),
+        fn() => new URI('user')
+    );
     $router->add(
         HTTPMethod::get(),
-        new URI('$api/user/{uid:user_id}'),
+        new URI('user/{uid:user_id}'),
         [new Content\Member($response), 'read']
     );
     $router->add(
         HTTPMethod::put() | HTTPMethod::post(),
-        new URI('$api/user/{uid:user_id}'),
+        new URI('user/{uid:user_id}'),
         [new Content\Member($response),'edit']
     );
     $router->add(
         HTTPMethod::put() | HTTPMethod::post(),
-        new URI('$api/user/'),
+        new URI('user/'),
         [new Content\Member($response), 'create']
     );
     $router->add(
         HTTPMethod::get(),
-        new URI('$api/user/'),
+        new URI('user/'),
         [new Content\Member($response),'search']
     );
     $router->add(
         HTTPMethod::patch(),
-        new URI('$api/user/{uid:user_id}'),
+        new URI('user/{uid:user_id}'),
         [new Content\Member($response), 'patch']
     );
 
-    $router->run(new URI($_SERVER['REQUEST_URI']));
+    $router->run(URI::fromRequest($_SERVER['REQUEST_URI']));
 } catch (Exception $e) {
     error_log($e->getMessage());
     http_response_code(500);

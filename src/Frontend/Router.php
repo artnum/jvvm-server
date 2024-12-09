@@ -6,17 +6,8 @@ use Exception;
 use JVVM\Frontend\Request;
 use JVVM\Utils\Exceptions\BadURI;
 use JVVM\Utils\Exceptions\MalformedRoute;
+use JVVM\Utils\RouterMethod;
 use JVVM\Utils\URI;
-
-use const JVVM\Utils\HTTP_METHODS;
-
-enum ROUTER_ROUTE_VARS: int {
-    case METHOD =   0;
-    case URI =      1;
-    case CALLBACK = 2;
-    case ARGS =     3;
-    case QS =       4;
-};
 
 class RouterFilters {
     static function filter_boolean(mixed $value):?bool {
@@ -81,6 +72,14 @@ class Router {
     protected bool $body_read;
     protected array $filters;
 
+    const URI_PARAM = 'uri';
+    const METHOD_PARAM = 'method';
+    const CALLBACK_PARAM = 'callback';
+    const ARGS_PARAM = 'args';
+    const QS_PARAM = 'query_string';
+    const URI_VAR_START = '{';
+    const URI_VAR_STOP = '}';
+
     function __construct() {
         $this->body_read = false;
         $this->routes = [];
@@ -109,11 +108,11 @@ class Router {
             array $query_string = []) {
         $id = $uri->get_id($method);
         $this->routes[$id] = [
-            ROUTER_ROUTE_VARS::METHOD->value =>     $method,
-            ROUTER_ROUTE_VARS::URI->value =>        $uri,
-            ROUTER_ROUTE_VARS::CALLBACK->value =>   $callback,
-            ROUTER_ROUTE_VARS::ARGS->value =>       $args,
-            ROUTER_ROUTE_VARS::QS->value =>         $query_string
+            self::METHOD_PARAM =>   $method,
+            self::URI_PARAM =>      $uri,
+            self::CALLBACK_PARAM => $callback,
+            self::ARGS_PARAM =>     $args,
+            self::QS_PARAM =>       $query_string
         ];
     }
 
@@ -136,7 +135,6 @@ class Router {
 
     function get_json_body() {
         $body = $this->get_body();
-        var_dump($body);
         return json_decode($body);
     }
 
@@ -146,7 +144,7 @@ class Router {
 
     private function get_filter_name_type($filter) {
         $i = 1;
-        while($filter[$i] !== '}') { $i++; }
+        while($filter[$i] !== self::URI_VAR_STOP) { $i++; }
         if ($i === 1) { return [null, null]; }
         $parts = explode(':', substr($filter, 1, $i -1), 2);
         if (count($parts) !== 2) { return [null, null]; }
@@ -172,24 +170,28 @@ class Router {
         $function = NULL;
         $args = [];
 
-        /* filter out non-matching http method */
-        $routes = array_filter(
-            $this->routes,
-            fn($route) => $route[ROUTER_ROUTE_VARS::METHOD->value] & $uri->get_method()
-        );
-
-        foreach($routes as $route) {
+        foreach($this->routes as $route) {
             $found = true;
             $vars = [];
-    
+            if (
+                !($route[self::METHOD_PARAM] & $uri->get_method())
+                && !RouterMethod::is_router_method( $route[self::METHOD_PARAM])
+            ) { 
+                continue;
+            }
             /* try to match uri, build var array on the way */
             foreach($uri as $p) {
-                if (!$route[ROUTER_ROUTE_VARS::URI->value]->valid()) {
+                
+                if (
+                        !isset($route[self::URI_PARAM])
+                        || !$route[self::URI_PARAM]->valid()
+                ) {
                     $found = false;
                     break;
                 }
-                $m = $route[ROUTER_ROUTE_VARS::URI->value]->current();
-                if ($m[0] === '{') {
+                $m = $route[self::URI_PARAM]->current();
+                if ($m[0] === self::URI_VAR_START) {
+                    if ($m === '{*}') { break; }
                     $this->apply_filter($p, $m, $vars, $args);
                 } else {
                     if ($p !== $m) {
@@ -197,22 +199,38 @@ class Router {
                         break;
                     }
                 }
-                $route[ROUTER_ROUTE_VARS::URI->value]->next();
+                $route[self::URI_PARAM]->next();
             }
             
+            if (
+                $found
+                && RouterMethod::is_router_method($route[self::METHOD_PARAM])
+                && $route[self::URI_PARAM]->valid()
+            ) {
+                while($route[self::URI_PARAM]->current() === '{*}') {
+                    $route[self::URI_PARAM]->next();
+                    if (!$route[self::URI_PARAM]->valid()) { break; }
+                }
+            }
+
             /* if we finish url but route goes further, we are not in a valid
              * uri
              */
-            if ($found && !$route[ROUTER_ROUTE_VARS::URI->value]->valid()) {
-                $function = $route[ROUTER_ROUTE_VARS::CALLBACK->value];
-                $args = [...$args, ...$route[ROUTER_ROUTE_VARS::ARGS->value]];
+            if ($found && !$route[self::URI_PARAM]->valid()) {
+                if (RouterMethod::is_router_method($route[self::METHOD_PARAM])) {
+                    $new_uri = call_user_func($route[self::CALLBACK_PARAM]);
+                    $new_uri->copy_from($uri, $route[self::URI_PARAM]);
+                    return $this->run($new_uri);
+                }
+                $function = $route[self::CALLBACK_PARAM];
+                $args = [...$args, ...$route[self::ARGS_PARAM]];
 
                 /* here we filter query string variable according to route 
                  * definition. Nothing is enforced, just it does what it finds 
                  * as best as possible
                  */
-                if (!empty($route[ROUTER_ROUTE_VARS::QS->value])) {
-                    $qs_filters = $route[ROUTER_ROUTE_VARS::QS->value];
+                if (!empty($route[self::QS_PARAM])) {
+                    $qs_filters = $route[self::QS_PARAM];
                     foreach($uri->get_query_string() as $name => $value) {
                         foreach($qs_filters as $filter) {
                             list ($filter_name, $type) = $this->get_filter_name_type($filter);
