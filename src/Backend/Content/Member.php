@@ -70,13 +70,8 @@ class Member {
             string $lastname,
             string $status = 'active'
     ):ID {
-        $limit = 0;
-        do {
-            if ($limit > 10) { throw new Exception('Cannot create ID, too many collision'); }
-            $id = ID::create();
-            $stmt = $this->pdo->query('SELECT id FROM member WHERE id = ' . $id->get());
-            $limit++;
-        } while ($stmt->rowCount() > 0);
+        SQL::lock_table($this->pdo, 'member');
+        $id = SQL::create_id($this->pdo, 'member', 'id');
 
         $stmt = $this->pdo->prepare(
             'INSERT INTO member
@@ -91,6 +86,7 @@ class Member {
         $stmt->bindValue(':mod', time(), PDO::PARAM_INT);
         $stmt->bindValue(':create', time(), PDO::PARAM_INT);
         $stmt->execute();
+        SQL::unlock_table($this->pdo);
         return $id;
     }
 

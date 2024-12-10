@@ -3,6 +3,8 @@
 namespace JVVM\Utils;
 
 use PDO;
+use Exception;
+use JVVM\Utils\Exceptions\SQLLock;
 
 class SQL {
     static private function qs_op_to_sql_op ($op) {
@@ -109,5 +111,53 @@ class SQL {
             $stmt->bindValue(':' . $key, $binding[0], $binding[1]);
         }
         return $stmt;
+ 
+ 
+    }
+
+    const WRITE_LOCK = 1;
+    const READ_LOCK = 2;
+
+    static function lock_table (
+        PDO $pdo,
+        string $table,
+        int $type =  self::WRITE_LOCK
+    ) {
+        $stmt = $pdo->query(
+            sprintf(
+                'LOCK TABLES %s %s',
+                $table,
+                $type == self::WRITE_LOCK ? 'WRITE' : 'READ'
+            )
+        );
+        if(intval($stmt->errorCode()) !== 0) {
+            throw new SQLLock(sprintf('Locking table %s failed', $table));
+        }
+    }
+
+    static function unlock_table (
+        PDO $pdo
+    ) {
+        $stmt = $pdo->query(sprintf('UNLOCK TABLES'));
+        if(intval($stmt->errorCode()) !== 0) {
+            throw new SQLLock(sprintf('Unlocking table failed'));
+        }
+    }
+
+    static function create_id(
+        PDO $pdo,
+        string $table,
+        string $field,
+        int $limit = 10
+    ):ID {
+        do {
+            if ($limit-- <= 0) { throw new Exception('Cannot create ID, too many collision'); }
+            $id = ID::create();
+            $stmt = $pdo->prepare(
+                sprintf('SELECT %s FROM %d WHERE %s = :id', $field, $table, $field)
+            );
+            $stmt->bindValue(':id', $id->get(), PDO::PARAM_INT);
+        } while ($stmt->rowCount() > 0);
+        return $id;
     }
 }
