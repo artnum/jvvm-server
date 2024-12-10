@@ -1,7 +1,10 @@
 <?php
-$filepath = __DIR__ . '/assets/' . join('/',
+$filepath = join('/',
     array_filter(
-        explode('/', $_SERVER['PATH_INFO']),
+        [
+            realpath(getenv('JVVM_CLIENT_PATH')), 
+            ...explode('/', $_SERVER['PATH_INFO'])
+        ],
         fn($part) => $part !== '' && $part !== '.' && $part !== '..'
     )
 );

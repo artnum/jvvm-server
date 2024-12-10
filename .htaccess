@@ -1,5 +1,5 @@
+SetEnv JVVM_CLIENT_PATH ../../jvvm-client/
 RewriteEngine On
-
 RewriteBase /
 
 RewriteCond $0#%{REQUEST_URI} ([^#]*)#(.*)\1$
