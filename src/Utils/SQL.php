@@ -154,9 +154,10 @@ class SQL {
             if ($limit-- <= 0) { throw new Exception('Cannot create ID, too many collision'); }
             $id = ID::create();
             $stmt = $pdo->prepare(
-                sprintf('SELECT %s FROM %d WHERE %s = :id', $field, $table, $field)
+                sprintf('SELECT %s FROM %s WHERE %s = :id', $field, $table, $field)
             );
             $stmt->bindValue(':id', $id->get(), PDO::PARAM_INT);
+            $stmt->execute();
         } while ($stmt->rowCount() > 0);
         return $id;
     }

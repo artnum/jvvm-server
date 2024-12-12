@@ -44,6 +44,11 @@ class URI implements Iterator {
         return $uri;
     }
 
+    function get_base():string {
+        if (!isset($this->parts[0])) { return ''; }
+        return $this->parts[0];
+    }
+
     function is_real():bool {
         return $this->real;
     }
@@ -58,7 +63,10 @@ class URI implements Iterator {
             $original = $uri->get_uri_components();
             $tpl = $template->get_uri_components();
             for ($i = 0; $i < count($original); $i++) {
-                if ($tpl[$i] === '{*}') {
+                if (!$copy 
+                    && isset($tpl[$i])
+                    && $tpl[$i] === '{*}'
+                ) {
                     $copy = true;
                 }
                 if ($copy) {

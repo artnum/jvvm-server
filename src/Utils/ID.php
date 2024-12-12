@@ -20,7 +20,7 @@ class ID {
     }
 
     public static function create () {
-        return new ID(self::generate(10));
+        return new ID(self::generate(15));
     }
 
     function get():int {

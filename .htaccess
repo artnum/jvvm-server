@@ -5,7 +5,7 @@ RewriteBase /
 RewriteCond $0#%{REQUEST_URI} ([^#]*)#(.*)\1$
 RewriteRule ^.*$ - [E=CWD:%2] 
 
-RewriteRule ^(?:.*)/?\$api/?(.*)$ %{ENV:CWD}japi.php/$1 [L]
+RewriteRule ^(?:.*)/?\$api/?(.*)$ %{ENV:CWD}endpoint.php/$1 [L]
 RewriteRule ^(?:.*)/?\$assets/?(.*)$ %{ENV:CWD}assets.php/$1 [R,L]
 
 <IfModule mod_expires.c>

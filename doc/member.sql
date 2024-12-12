@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS member (
-    id BIGINT PRIMARY KEY,
+    id BIGINT UNSIGNED PRIMARY KEY,
     firstname VARCHAR(255),
     lastname VARCHAR(255),
     status ENUM('active', 'inactive') DEFAULT 'active',
@@ -40,13 +40,30 @@ CREATE TABLE IF NOT EXISTS member_address (
 );
 
 CREATE TABLE IF NOT EXISTS member_auth (
-    id BIGINT UNSIGNED PRIMARY KEY,
-    member BIGINT UNSIGNED,
-    identifier VARCHAR(255), -- email, phone, ...
-    parameter1 VARCHAR(255), -- password, token, ...
-    parameter2 VARCHAR(255), -- password, token, ...
-    parameter3 VARCHAR(255), -- password, token, ...
-    parameter4 VARCHAR(255), -- password, token, ...
+    member_id BIGINT UNSIGNED,
+    identifier VARCHAR(255) NOT NULL, -- email, phone, ...
+    parameter1 VARCHAR(255) NOT NULL DEFAULT '', -- password, token, ...
+    parameter2 VARCHAR(255) NOT NULL DEFAULT '', -- password, token, ...
+    parameter3 VARCHAR(255) NOT NULL DEFAULT '', -- password, token, ...
+    parameter4 VARCHAR(255) NOT NULL DEFAULT '', -- password, token, ...
     type CHAR(8), -- describe type of authentification (password, token, ...)
-    FOREIGN KEY (member) REFERENCES member(id) ON DELETE CASCADE ON UPDATE CASCADE
+    options1 VARCHAR(255) NOT NULL DEFAULT '', -- options related to auth type
+    options2 VARCHAR(255) NOT NULL DEFAULT '',
+    options3 VARCHAR(255) NOT NULL DEFAULT '',
+    options4 VARCHAR(255) NOT NULL DEFAULT '',
+    _modified INT NOT NULL DEFAULT 0,
+    _deleted INT NOT NULL DEFAULT 0,
+    _created INT NOT NULL DEFAULT 0,
+    PRIMARY KEY(member_id, type, identifier),
+    FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX USING HASH (identifier),
+    INDEX USING HASH (type)
+);
+
+CREATE TABLE IF NOT EXISTS member_session (
+    session_id BIGINT UNSIGNED PRIMARY KEY,
+    member_id BIGINT UNSIGNED,
+    since INT DEFAULT 0,
+    FOREIGN KEY (memeber_id) REFERENCES member(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX USING BTREE (since)
 );

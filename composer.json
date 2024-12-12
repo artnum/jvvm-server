@@ -25,9 +25,6 @@
     },
     "minimum-stability": "dev",
     "require": {
-        "artnum/kaal-db": "@dev",
-        "artnum/pjapi": "@dev",
-        "artnum/snowflake53": "@dev",
         "artnum/idz": "@dev"
     }
 }
